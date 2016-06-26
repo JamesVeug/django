@@ -364,6 +364,12 @@ class ResolverTests(unittest.TestCase):
         except TypeError:
             self.fail('Failed to coerce lazy object to text')
 
+    def test_resolver_reverse(self):
+        resolver = get_resolver('urlpatterns_reverse.named_urls')
+        self.assertEqual(resolver.reverse('named-url1'), '')
+        self.assertEqual(resolver.reverse('named-url2', 'arg'), 'extra/arg/')
+        self.assertEqual(resolver.reverse('named-url2', extra='arg'), 'extra/arg/')
+
     def test_non_regex(self):
         """
         Verifies that we raise a Resolver404 if what we are resolving doesn't
@@ -427,6 +433,13 @@ class ResolverTests(unittest.TestCase):
                                 e['name'],
                                 'Wrong URL name.  Expected "%s", got "%s".' % (e['name'], t.name)
                             )
+
+    def test_namespaced_view_detail(self):
+        resolver = get_resolver('urlpatterns_reverse.nested_urls')
+        self.assertTrue(resolver._is_callback('urlpatterns_reverse.nested_urls.view1'))
+        self.assertTrue(resolver._is_callback('urlpatterns_reverse.nested_urls.view2'))
+        self.assertTrue(resolver._is_callback('urlpatterns_reverse.nested_urls.View3'))
+        self.assertFalse(resolver._is_callback('urlpatterns_reverse.nested_urls.blub'))
 
 
 @override_settings(ROOT_URLCONF='urlpatterns_reverse.reverse_lazy_urls')

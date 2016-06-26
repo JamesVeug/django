@@ -825,6 +825,15 @@ class SchemaTests(TransactionTestCase):
                     author_is_fk = True
         self.assertTrue(author_is_fk, "No FK constraint for author_id found")
 
+    def test_alter_db_table_case(self):
+        # Create the table
+        with connection.schema_editor() as editor:
+            editor.create_model(Author)
+        # Alter the case of the table
+        old_table_name = Author._meta.db_table
+        with connection.schema_editor() as editor:
+            editor.alter_db_table(Author, old_table_name, old_table_name.upper())
+
     def test_alter_implicit_id_to_explicit(self):
         """
         Should be able to convert an implicit "id" field to an explicit "id"
@@ -1700,7 +1709,7 @@ class SchemaTests(TransactionTestCase):
             editor.create_model(Author)
         # Create a row
         Author.objects.create(name='Anonymous1')
-        self.assertEqual(Author.objects.get().height, None)
+        self.assertIsNone(Author.objects.get().height)
         old_field = Author._meta.get_field('height')
         # The default from the new field is used in updating existing rows.
         new_field = IntegerField(blank=True, default=42)

@@ -15,7 +15,8 @@ from django.template import (
 )
 from django.template.response import SimpleTemplateResponse
 from django.test import (
-    Client, SimpleTestCase, TestCase, ignore_warnings, override_settings,
+    Client, SimpleTestCase, TestCase, ignore_warnings, modify_settings,
+    override_settings,
 )
 from django.test.client import RedirectCycleError, RequestFactory, encode_file
 from django.test.utils import ContextList, str_prefix
@@ -455,6 +456,7 @@ class AssertRedirectsTests(SimpleTestCase):
         self.assertRedirects(response, '/no_template_view/', 302, 200)
         self.assertEqual(len(response.redirect_chain), 3)
 
+    @modify_settings(ALLOWED_HOSTS={'append': 'otherserver'})
     def test_redirect_to_different_host(self):
         "The test client will preserve scheme, host and port changes"
         response = self.client.get('/redirect_other_host/', follow=True)
@@ -467,6 +469,12 @@ class AssertRedirectsTests(SimpleTestCase):
         self.assertEqual(response.request.get('wsgi.url_scheme'), 'https')
         self.assertEqual(response.request.get('SERVER_NAME'), 'otherserver')
         self.assertEqual(response.request.get('SERVER_PORT'), '8443')
+        # assertRedirects() can follow redirect to 'otherserver' too.
+        response = self.client.get('/redirect_other_host/', follow=False)
+        self.assertRedirects(
+            response, 'https://otherserver:8443/no_template_view/',
+            status_code=302, target_status_code=200
+        )
 
     def test_redirect_chain_on_non_redirect_page(self):
         "An assertion is raised if the original page couldn't be retrieved as expected"
@@ -1244,19 +1252,19 @@ class QueryStringTests(SimpleTestCase):
             self.assertEqual(response.context['get-foo'], 'bang')
 
             response = method("/request_data/?foo=whiz", data={'bar': 'bang'})
-            self.assertEqual(response.context['get-foo'], None)
+            self.assertIsNone(response.context['get-foo'])
             self.assertEqual(response.context['get-bar'], 'bang')
 
     def test_post_like_requests(self):
         # A POST-like request can pass a query string as data
         response = self.client.post("/request_data/", data={'foo': 'whiz'})
-        self.assertEqual(response.context['get-foo'], None)
+        self.assertIsNone(response.context['get-foo'])
         self.assertEqual(response.context['post-foo'], 'whiz')
 
         # A POST-like request can pass a query string as part of the URL
         response = self.client.post("/request_data/?foo=whiz")
         self.assertEqual(response.context['get-foo'], 'whiz')
-        self.assertEqual(response.context['post-foo'], None)
+        self.assertIsNone(response.context['post-foo'])
 
         # POST data provided in the URL augments actual form data
         response = self.client.post("/request_data/?foo=whiz", data={'foo': 'bang'})
@@ -1265,8 +1273,8 @@ class QueryStringTests(SimpleTestCase):
 
         response = self.client.post("/request_data/?foo=whiz", data={'bar': 'bang'})
         self.assertEqual(response.context['get-foo'], 'whiz')
-        self.assertEqual(response.context['get-bar'], None)
-        self.assertEqual(response.context['post-foo'], None)
+        self.assertIsNone(response.context['get-bar'])
+        self.assertIsNone(response.context['post-foo'])
         self.assertEqual(response.context['post-bar'], 'bang')
 
 

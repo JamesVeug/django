@@ -66,6 +66,10 @@ Minor features
 * The default iteration count for the PBKDF2 password hasher is increased by
   20%.
 
+* The :class:`~django.contrib.auth.views.LoginView` and
+  :class:`~django.contrib.auth.views.LogoutView` class-based views supersede the
+  deprecated ``login()`` and ``logout()`` function-based views.
+
 :mod:`django.contrib.contenttypes`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -74,7 +78,8 @@ Minor features
 :mod:`django.contrib.gis`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* ...
+* The new :meth:`.GEOSGeometry.from_gml` and :meth:`.OGRGeometry.from_gml`
+  methods allow creating geometries from GML.
 
 :mod:`django.contrib.messages`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,7 +170,8 @@ Generic Views
 Internationalization
 ~~~~~~~~~~~~~~~~~~~~
 
-* ...
+* Number formatting and the :setting:`NUMBER_GROUPING` setting support
+  non-uniform digit grouping.
 
 Management Commands
 ~~~~~~~~~~~~~~~~~~~
@@ -227,19 +233,35 @@ Validators
 Backwards incompatible changes in 1.11
 ======================================
 
+:mod:`django.contrib.gis`
+-------------------------
+
+* To simplify the codebase and because it's easier to install than when
+  ``contrib.gis`` was first released, :ref:`gdalbuild` is now a required
+  dependency for GeoDjango. In older versions, it's only required for SQLite.
+
 Database backend API
 --------------------
 
 * ...
 
 Dropped support for PostgreSQL 9.2 and PostGIS 2.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 Upstream support for PostgreSQL 9.2 ends in September 2017. As a consequence,
 Django 1.11 sets PostgreSQL 9.3 as the minimum version it officially supports.
 
 Support for PostGIS 2.0 is also removed as PostgreSQL 9.2 is the last version
 to support it.
+
+``LiveServerTestCase`` binds to port zero
+-----------------------------------------
+
+Rather than taking a port range and iterating to find a free port,
+``LiveServerTestCase`` binds to port zero and relies on the operating system
+to assign a free port. The ``DJANGO_LIVE_TEST_SERVER_ADDRESS`` environment
+variable is no longer used, and as it's also no longer used, the
+``manage.py test --liveserver`` option is removed.
 
 Miscellaneous
 -------------
@@ -252,8 +274,13 @@ Miscellaneous
 
 * Support for SpatiaLite < 4.0 is dropped.
 
-* CSRF failures are logged to the ``django.security.csrf ``` logger instead of
+* CSRF failures are logged to the ``django.security.csrf`` logger instead of
   ``django.request``.
+
+* :setting:`ALLOWED_HOSTS` validation is no longer disabled when running tests.
+  If your application includes tests with custom host names, you must include
+  those host names in :setting:`ALLOWED_HOSTS`. See
+  :ref:`topics-testing-advanced-multiple-hosts`.
 
 * Using a foreign key's id (e.g. ``'field_id'``) in ``ModelAdmin.list_display``
   displays the related object's ID. Remove the ``_id`` suffix if you want the
@@ -266,6 +293,11 @@ Miscellaneous
   <django.db.models.Model.validate_unique>` no longer checks empty strings for
   uniqueness as the database interprets the value as ``NULL``.
 
+* If you subclass :class:`.AbstractUser` and override ``clean()``, be sure it
+  calls ``super()``. :meth:`.BaseUserManager.normalize_email` is called in a
+  new :meth:`.AbstractUser.clean` method so that normalization is applied in
+  cases like model form validation.
+
 .. _deprecated-features-1.11:
 
 Features deprecated in 1.11
@@ -274,4 +306,7 @@ Features deprecated in 1.11
 Miscellaneous
 -------------
 
-* ...
+* ``contrib.auth``’s ``login()`` and ``logout()`` function-based views are
+  deprecated in favor of new class-based views
+  :class:`~django.contrib.auth.views.LoginView` and
+  :class:`~django.contrib.auth.views.LogoutView`.

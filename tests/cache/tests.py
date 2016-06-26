@@ -523,7 +523,7 @@ class BaseCacheTests(object):
         cache.add('key2', 'ham', None)
         self.assertEqual(cache.get('key2'), 'ham')
         added = cache.add('key1', 'new eggs', None)
-        self.assertEqual(added, False)
+        self.assertIs(added, False)
         self.assertEqual(cache.get('key1'), 'eggs')
 
         cache.set_many({'key3': 'sausage', 'key4': 'lobster bisque'}, None)
@@ -1393,6 +1393,7 @@ class DefaultNonExpiringCacheKeyTests(SimpleTestCase):
         },
     },
     USE_I18N=False,
+    ALLOWED_HOSTS=['.example.com'],
 )
 class CacheUtils(SimpleTestCase):
     """TestCase for django.utils.cache functions."""
